@@ -1,0 +1,4 @@
+<p
+  [class]="{ user: role() === 'user', thinking: type() === 'thinking', error: type() === 'error' }"
+  [innerHTML]="message()"
+></p>

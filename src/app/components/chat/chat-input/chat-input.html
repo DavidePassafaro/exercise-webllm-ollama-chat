@@ -1,0 +1,8 @@
+<textarea
+  placeholder="Type your message"
+  novalidate
+  [formField]="inputForm"
+  (keyup.enter)="sendMessage()"
+></textarea>
+
+<button [disabled]="isDisabled() || inputForm().invalid()" (click)="sendMessage()">Send</button>

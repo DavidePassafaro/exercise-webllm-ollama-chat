@@ -1,7 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import ollama from 'ollama/browser';
 import showdown from 'showdown';
-import { CreateMLCEngine, MLCEngine } from '@mlc-ai/web-llm';
+import { ChatCompletionChunk, CreateMLCEngine, MLCEngine } from '@mlc-ai/web-llm';
 import { Header } from './components/app/header/header';
 import { Footer } from './components/app/footer/footer';
 import { ChatHeader } from './components/chat/chat-header/chat-header';
@@ -15,11 +15,14 @@ const CurrentMode: ModelType = 'web-llm';
 const OllamaModel = 'qwen3.5:0.8b';
 const webLLMModel = 'Llama-3-8B-Instruct-q4f32_1-MLC';
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
+interface BaseChatMessage {
   content: string;
   type: 'message' | 'error';
 }
+
+type ChatMessage =
+  | (BaseChatMessage & { role: 'user' })
+  | (BaseChatMessage & { role: 'assistant'; completed: boolean });
 
 @Component({
   selector: 'app-root',
@@ -30,10 +33,12 @@ interface ChatMessage {
 export class App {
   protected modelLoading = signal<number>(0);
   protected messages = signal<ChatMessage[]>([]);
+  protected isAiReplying = signal<boolean>(false);
 
   protected isAiReady = computed(() => this.modelLoading() === 100);
-  protected isThinking = computed(
-    () => this.messages().length > 0 && this.messages().at(-1)?.role !== 'assistant',
+  protected lastMessage = computed(() => this.messages().at(-1));
+  protected shouldShowThinkingBubble = computed(
+    () => this.isAiReplying() && this.lastMessage()?.role !== 'assistant',
   );
 
   protected currentMode = CurrentMode;
@@ -65,23 +70,50 @@ export class App {
   }
 
   protected sendWebLLMMessage(content: string): void {
-    const newMessage = { role: 'user', content, type: 'message' } as ChatMessage;
+    const newMessage: ChatMessage = { role: 'user', content, type: 'message' };
     this.messages.update((messages) => [...messages, newMessage]);
+    this.isAiReplying.set(true);
 
+    let message: string = '';
     this.webLLMEngine.chat.completions
-      .create({ messages: this.messages() })
-      .then((reply) => this.addAssistantMessage(reply.choices[0]?.message.content || ''))
+      .create({ messages: this.messages(), stream: true })
+      .then(async (chunks: AsyncIterable<ChatCompletionChunk>) => {
+        for await (const chunk of chunks) {
+          const response = chunk.choices[0];
+          if (!response) {
+            return;
+          }
+
+          message += response.delta.content || '';
+
+          const lastMessage = this.lastMessage();
+          const shouldUpdateLastMessage =
+            lastMessage && lastMessage.role === 'assistant' && !lastMessage.completed;
+
+          if (shouldUpdateLastMessage) {
+            this.messages.update((messages) => [...messages.slice(0, -1)]);
+          }
+
+          const isMessageCompleted = response.finish_reason === 'stop';
+          this.addAssistantMessage(message, { isMessageCompleted });
+          if (isMessageCompleted) {
+            this.isAiReplying.set(false);
+          }
+        }
+      })
       .catch((error) => this.handleError(error));
   }
 
   protected sendOllamaMessage(content: string): void {
-    const newMessage = { role: 'user', content, type: 'message' } as ChatMessage;
+    const newMessage: ChatMessage = { role: 'user', content, type: 'message' };
     this.messages.update((messages) => [...messages, newMessage]);
+    this.isAiReplying.set(true);
 
     ollama
       .chat({ model: OllamaModel, messages: this.messages() })
       .then(({ message: { content } }) => this.addAssistantMessage(content))
-      .catch((error) => this.handleError(error));
+      .catch((error) => this.handleError(error))
+      .finally(() => this.isAiReplying.set(false));
   }
 
   private handleError(error: any): void {
@@ -96,13 +128,17 @@ export class App {
     this.addAssistantMessage(errorMessage, { type: 'error' });
   }
 
-  private addAssistantMessage(message: string, config?: { type: 'message' | 'error' }): void {
+  private addAssistantMessage(
+    message: string,
+    config?: { type?: 'message' | 'error'; isMessageCompleted?: boolean },
+  ): void {
     const htmlContent = this.converter.makeHtml(message);
-    const assistantMessage = {
+    const assistantMessage: ChatMessage = {
       role: 'assistant',
       content: htmlContent,
       type: config?.type || 'message',
-    } as ChatMessage;
+      completed: config?.isMessageCompleted ?? true,
+    };
     this.messages.update((messages) => [...messages, assistantMessage]);
   }
 }

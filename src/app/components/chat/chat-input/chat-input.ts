@@ -29,7 +29,7 @@ export class ChatInput {
   });
 
   sendMessage(): void {
-    if (this.inputForm().invalid()) return;
+    if (this.isDisabled() || this.inputForm().invalid()) return;
 
     this.send.emit(this.userText().trim());
     this.userText.set('');

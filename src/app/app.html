@@ -12,14 +12,14 @@
       <app-message-bubble [message]="message.content" [role]="message.role" [type]="message.type" />
     }
 
-    @if (isThinking()) {
+    @if (shouldShowThinkingBubble()) {
       @defer (on timer(500ms)) {
         <app-message-bubble message="Thinking..." role="assistant" type="thinking" />
       }
     }
   </section>
 
-  <app-chat-input [isDisabled]="!isAiReady() || isThinking()" (send)="sendMessage($event)" />
+  <app-chat-input [isDisabled]="!isAiReady() || isAiReplying()" (send)="sendMessage($event)" />
 </main>
 
 <app-footer />

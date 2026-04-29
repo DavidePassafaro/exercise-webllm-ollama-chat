@@ -6,5 +6,7 @@ import { Component, input } from '@angular/core';
   styleUrl: './chat-header.scss',
 })
 export class ChatHeader {
+  currentMode = input.required<'ollama' | 'web-llm'>();
   currentModel = input.required<string>();
+  modelLoading = input<number>();
 }

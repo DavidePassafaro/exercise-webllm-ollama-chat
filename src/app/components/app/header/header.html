@@ -2,13 +2,21 @@
   <div class="logo-container">
     <img src="angular_icon_gradient.gif" alt="" />
     <p>+</p>
-    <img style="padding: 0 5px" src="ollama.png" alt="" />
+    @if (currentMode() === 'ollama') {
+      <img style="padding: 0 5px" src="ollama.png" alt="" />
+    } @else {
+      <img src="web-llm.png" alt="" />
+    }
   </div>
 
   <h1>Local AI Chat</h1>
 
   <div class="logo-container">
-    <img style="padding: 0 5px" src="ollama.png" alt="" />
+    @if (currentMode() === 'ollama') {
+      <img style="padding: 0 5px" src="ollama.png" alt="" />
+    } @else {
+      <img src="web-llm.png" alt="" />
+    }
     <p>+</p>
     <img src="angular_icon_gradient.gif" alt="" />
   </div>

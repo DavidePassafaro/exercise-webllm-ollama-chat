@@ -1,5 +1,16 @@
 <div class="header">
   <p>Welcome to Local AI Chat</p>
-  <p>This is made with Angular and connects to Ollama.</p>
-  <p>Current Model: {{ currentModel() }}</p>
+  @if (currentMode() === 'ollama') {
+    <p>This is made with Angular and connects to Ollama.</p>
+  } @else {
+    <p>This is made with Angular and runs locally on your browser using Web LLM.</p>
+  }
+
+  <hr />
+
+  <p><strong>Current Model:</strong> {{ currentModel() }}</p>
+
+  @if (currentMode() === 'web-llm') {
+    <p><strong>Model Loading:</strong> {{ modelLoading() }}%</p>
+  }
 </div>

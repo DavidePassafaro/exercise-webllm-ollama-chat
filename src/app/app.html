@@ -1,8 +1,12 @@
-<app-header />
+<app-header [currentMode]="currentMode" />
 
 <main>
   <section>
-    <app-chat-header [currentModel]="currentModel" />
+    <app-chat-header
+      [currentModel]="currentModel"
+      [modelLoading]="modelLoading()"
+      [currentMode]="currentMode"
+    />
 
     @for (message of messages(); track $index) {
       <app-message-bubble [message]="message.content" [role]="message.role" [type]="message.type" />
@@ -15,7 +19,7 @@
     }
   </section>
 
-  <app-chat-input [isDisabled]="isThinking()" (send)="sendMessage($event)" />
+  <app-chat-input [isDisabled]="!isAiReady() || isThinking()" (send)="sendMessage($event)" />
 </main>
 
 <app-footer />

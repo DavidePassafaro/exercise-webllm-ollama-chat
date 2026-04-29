@@ -13,7 +13,7 @@ type ModelType = 'ollama' | 'web-llm';
 const CurrentMode: ModelType = 'web-llm';
 
 const OllamaModel = 'qwen3.5:0.8b';
-const webLLMModel = 'Llama-3-8B-Instruct-q4f32_1-MLC';
+const webLLMModel = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
 
 interface BaseChatMessage {
   content: string;

@@ -19,3 +19,29 @@ p:first-child {
   margin-top: 0;
   font-weight: bold;
 }
+
+.model-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 5px;
+
+  button {
+    padding: 4px 12px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: transparent;
+    cursor: pointer;
+
+    &.active {
+      background-color: lightskyblue;
+      border-color: lightskyblue;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+}

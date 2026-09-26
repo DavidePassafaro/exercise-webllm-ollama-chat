@@ -3,10 +3,33 @@
   @if (currentMode() === 'ollama') {
     <p>This is made with Angular and connects to Ollama.</p>
   } @else {
-    <p>This is made with Angular and runs locally on your browser using WebLLM.</p>
+    <p>This is made with Angular and runs locally on your browser using Web LLM.</p>
   }
 
   <hr />
+
+  @if (currentMode() === 'web-llm') {
+    <div class="model-switch">
+      <span>Model type:</span>
+      <button
+        type="button"
+        [class.active]="webLLMModelType() === 'text'"
+        [disabled]="disableModelSwitch()"
+        (click)="selectModelType('text')"
+      >
+        Text
+      </button>
+      <button
+        type="button"
+        [class.active]="webLLMModelType() === 'vision'"
+        [disabled]="disableModelSwitch()"
+        (click)="selectModelType('vision')"
+        title="Vision-language model: lets you attach an image to your message"
+      >
+        Vision
+      </button>
+    </div>
+  }
 
   <p><strong>Current Model:</strong> {{ currentModel() }}</p>
 

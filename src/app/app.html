@@ -3,13 +3,21 @@
 <main>
   <section>
     <app-chat-header
-      [currentModel]="currentModel"
+      [currentModel]="currentModel()"
       [modelLoading]="modelLoading()"
       [currentMode]="currentMode"
+      [webLLMModelType]="webLLMModelType()"
+      [disableModelSwitch]="disableModelSwitch()"
+      (modelTypeChange)="switchWebLLMModelType($event)"
     />
 
     @for (message of messages(); track $index) {
-      <app-message-bubble [message]="message.content" [role]="message.role" [type]="message.type" />
+      <app-message-bubble
+        [message]="message.content"
+        [role]="message.role"
+        [type]="message.type"
+        [imageUrl]="message.role === 'user' ? message.imageUrl : undefined"
+      />
     }
 
     @if (shouldShowThinkingBubble()) {
@@ -19,7 +27,11 @@
     }
   </section>
 
-  <app-chat-input [isDisabled]="!isAiReady() || isAiReplying()" (send)="sendMessage($event)" />
+  <app-chat-input
+    [isDisabled]="!isAiReady() || isAiReplying()"
+    [supportsImages]="supportsVision()"
+    (send)="sendMessage($event)"
+  />
 </main>
 
 <app-footer />

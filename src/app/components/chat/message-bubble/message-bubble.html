@@ -1,4 +1,14 @@
-<p
-  [class]="{ user: role() === 'user', thinking: type() === 'thinking', error: type() === 'error' }"
-  [innerHTML]="message()"
-></p>
+<div
+  [class]="{
+    bubble: true,
+    user: role() === 'user',
+    thinking: type() === 'thinking',
+    error: type() === 'error',
+  }"
+>
+  @if (imageUrl(); as image) {
+    <img class="attached-image" [src]="image" alt="Attached image" />
+  }
+
+  <p [innerHTML]="message()"></p>
+</div>

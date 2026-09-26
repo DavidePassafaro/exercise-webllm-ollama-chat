@@ -9,4 +9,5 @@ export class MessageBubble {
   message = input.required<string>();
   role = input.required<'user' | 'assistant'>();
   type = input.required<'message' | 'thinking' | 'error'>();
+  imageUrl = input<string>();
 }

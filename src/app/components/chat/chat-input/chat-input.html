@@ -1,8 +1,38 @@
-<textarea
-  placeholder="Type your message"
-  novalidate
-  [formField]="inputForm"
-  (keyup.enter)="sendMessage()"
-></textarea>
+@if (attachedImage(); as image) {
+  <div class="attachment-preview">
+    <img [src]="image" alt="Attached image preview" />
+    <button
+      type="button"
+      class="remove-attachment"
+      (click)="removeAttachedImage()"
+      title="Remove image"
+    >
+      ✕
+    </button>
+  </div>
+}
 
-<button [disabled]="isDisabled() || inputForm().invalid()" (click)="sendMessage()">Send</button>
+<div class="input-row">
+  @if (supportsImages()) {
+    <input #fileInput type="file" accept="image/*" hidden (change)="onImageSelected($event)" />
+
+    <button
+      type="button"
+      class="attach-button"
+      [disabled]="isDisabled()"
+      (click)="openFilePicker()"
+      title="Attach an image"
+    >
+      📎
+    </button>
+  }
+
+  <textarea
+    placeholder="Type your message"
+    novalidate
+    [formField]="inputForm"
+    (keyup.enter)="sendMessage()"
+  ></textarea>
+
+  <button [disabled]="isDisabled() || inputForm().invalid()" (click)="sendMessage()">Send</button>
+</div>

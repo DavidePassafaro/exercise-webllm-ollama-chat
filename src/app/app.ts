@@ -7,6 +7,7 @@ import { Footer } from './components/app/footer/footer';
 import { ChatHeader } from './components/chat/chat-header/chat-header';
 import { MessageBubble } from './components/chat/message-bubble/message-bubble';
 import { ChatInput, ChatInputSendEvent } from './components/chat/chat-input/chat-input';
+import { DEFAULT_TEXT_MODEL_ID, VISION_MODEL_ID } from './data/llm-models';
 
 type ModelType = 'ollama' | 'web-llm';
 type WebLLMModelType = 'text' | 'vision';
@@ -14,12 +15,6 @@ type WebLLMModelType = 'text' | 'vision';
 const CurrentMode: ModelType = 'web-llm';
 
 const OllamaModel = 'qwen3.5:0.8b';
-const webLLMTextModel = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
-const webLLMVisionModel = 'Phi-3.5-vision-instruct-q4f16_1-MLC';
-
-function webLLMModelIdFor(type: WebLLMModelType): string {
-  return type === 'vision' ? webLLMVisionModel : webLLMTextModel;
-}
 
 interface BaseChatMessage {
   content: string;
@@ -38,11 +33,17 @@ type ChatMessage =
 })
 export class App {
   protected modelLoading = signal<number>(0);
+  protected modelLoadingText = signal<string>('');
+  protected isModelLoading = signal<boolean>(false);
+  protected modelLoadError = signal<string | undefined>(undefined);
   protected messages = signal<ChatMessage[]>([]);
   protected isAiReplying = signal<boolean>(false);
   protected webLLMModelType = signal<WebLLMModelType>('text');
+  protected webLLMTextModel = signal<string>(DEFAULT_TEXT_MODEL_ID);
 
-  protected isAiReady = computed(() => this.modelLoading() === 100);
+  protected isAiReady = computed(
+    () => !this.isModelLoading() && !this.modelLoadError() && this.modelLoading() === 100,
+  );
   protected lastMessage = computed(() => this.messages().at(-1));
   protected shouldShowThinkingBubble = computed(
     () => this.isAiReplying() && this.lastMessage()?.role !== 'assistant',
@@ -50,25 +51,26 @@ export class App {
 
   protected currentMode = CurrentMode;
   protected currentModel = computed(() =>
-    this.currentMode === 'ollama' ? OllamaModel : webLLMModelIdFor(this.webLLMModelType()),
+    this.currentMode === 'ollama'
+      ? OllamaModel
+      : this.webLLMModelType() === 'vision'
+        ? VISION_MODEL_ID
+        : this.webLLMTextModel(),
   );
 
   protected supportsVision = computed(
     () => this.currentMode === 'web-llm' && this.webLLMModelType() === 'vision',
   );
-  protected disableModelSwitch = computed(() => !this.isAiReady() || this.isAiReplying());
+  protected disableModelSwitch = computed(() => this.isAiReplying());
 
   private converter = new showdown.Converter();
 
-  private webLLMEngine!: MLCEngine;
+  private webLLMEngine?: MLCEngine;
+  private webLLMEngineReload?: Promise<void>;
+  private lastLoadId = 0;
 
   constructor() {
     if (this.currentMode === 'web-llm') {
-      this.webLLMEngine = new MLCEngine({
-        initProgressCallback: (progress) => {
-          this.modelLoading.set(Math.round(progress.progress * 100));
-        },
-      });
       this.loadWebLLMModel(this.currentModel());
     }
   }
@@ -88,7 +90,19 @@ export class App {
 
     this.webLLMModelType.set(type);
     this.messages.set([]);
-    this.loadWebLLMModel(webLLMModelIdFor(type));
+    this.loadWebLLMModel(this.currentModel());
+  }
+
+  protected switchWebLLMTextModel(modelId: string): void {
+    if (this.currentMode !== 'web-llm') return;
+    if (this.webLLMTextModel() === modelId) return;
+    if (this.disableModelSwitch()) return;
+
+    this.webLLMTextModel.set(modelId);
+    if (this.webLLMModelType() !== 'text') return;
+
+    this.messages.set([]);
+    this.loadWebLLMModel(this.currentModel());
   }
 
   protected sendWebLLMMessage(content: string, imageUrl?: string): void {
@@ -97,7 +111,7 @@ export class App {
     this.isAiReplying.set(true);
 
     let message: string = '';
-    this.webLLMEngine.chat.completions
+    this.webLLMEngine!.chat.completions
       .create({ messages: this.toApiMessages(), stream: true })
       .then(async (chunks: AsyncIterable<ChatCompletionChunk>) => {
         for await (const chunk of chunks) {
@@ -138,11 +152,56 @@ export class App {
       .finally(() => this.isAiReplying.set(false));
   }
 
+  /**
+   * Every load gets its own engine, so the model can be switched while another one is still
+   * loading: the previous engine is unloaded (which aborts its download) and anything it still
+   * reports is ignored. A failed load (e.g. not enough GPU memory) shows the error instead of
+   * locking the UI, so another model can be picked.
+   */
   private loadWebLLMModel(model: string): void {
+    const loadId = ++this.lastLoadId;
+    const isCurrentLoad = () => loadId === this.lastLoadId;
+
+    this.disposeWebLLMEngine();
+
     this.modelLoading.set(0);
-    this.webLLMEngine.reload(model).then(() => {
-      this.modelLoading.set(100);
+    this.modelLoadingText.set('Starting...');
+    this.modelLoadError.set(undefined);
+    this.isModelLoading.set(true);
+
+    const engine = new MLCEngine({
+      initProgressCallback: (progress) => {
+        if (!isCurrentLoad()) return;
+        this.modelLoading.set(Math.round(progress.progress * 100));
+        this.modelLoadingText.set(progress.text);
+      },
     });
+    this.webLLMEngine = engine;
+    this.webLLMEngineReload = engine.reload(model);
+
+    this.webLLMEngineReload
+      .then(() => {
+        if (isCurrentLoad()) this.modelLoading.set(100);
+      })
+      .catch((error) => {
+        if (!isCurrentLoad()) return;
+        console.error(`WebLLM failed to load ${model}:`, error);
+        this.modelLoadError.set(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        if (isCurrentLoad()) this.isModelLoading.set(false);
+      });
+  }
+
+  private disposeWebLLMEngine(): void {
+    const engine = this.webLLMEngine;
+    if (!engine) return;
+
+    const unload = () => engine.unload().catch(() => undefined);
+    // Aborts a download in progress; once the reload settles, unload again to free the GPU
+    // memory in case it was already past the download phase.
+    unload();
+    this.webLLMEngineReload?.then(unload, unload);
   }
 
   /**

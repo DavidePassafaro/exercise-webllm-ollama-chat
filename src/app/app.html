@@ -5,10 +5,14 @@
     <app-chat-header
       [currentModel]="currentModel()"
       [modelLoading]="modelLoading()"
+      [modelLoadingText]="modelLoadingText()"
+      [modelLoadError]="modelLoadError()"
       [currentMode]="currentMode"
       [webLLMModelType]="webLLMModelType()"
+      [webLLMTextModel]="webLLMTextModel()"
       [disableModelSwitch]="disableModelSwitch()"
       (modelTypeChange)="switchWebLLMModelType($event)"
+      (textModelChange)="switchWebLLMTextModel($event)"
     />
 
     @for (message of messages(); track $index) {

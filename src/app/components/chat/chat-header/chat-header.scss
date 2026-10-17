@@ -4,39 +4,51 @@
 }
 
 .header {
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
   margin-bottom: 10px;
   border: 2px solid #ccc;
   border-radius: 10px;
 }
 
-p {
-  margin: 0;
-  margin-top: 5px;
-}
-
-p:first-child {
-  margin-top: 0;
+.title {
   font-weight: bold;
 }
 
-.model-switch {
+.subtitle {
+  color: #555;
+}
+
+.controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 5px;
+  margin-top: 8px;
+}
+
+.model-switch {
+  display: inline-flex;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  overflow: hidden;
 
   button {
-    padding: 4px 12px;
-    border: 2px solid #ccc;
-    border-radius: 10px;
+    padding: 4px 14px;
+    border: none;
     background-color: transparent;
     cursor: pointer;
 
+    & + button {
+      border-left: 2px solid #ccc;
+    }
+
     &.active {
       background-color: lightskyblue;
-      border-color: lightskyblue;
     }
 
     &:disabled {
@@ -44,4 +56,78 @@ p:first-child {
       opacity: 0.6;
     }
   }
+}
+
+select {
+  padding: 4px 8px;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  background-color: transparent;
+  font: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.model-select,
+.model-name {
+  font-size: 0.9em;
+}
+
+.model-name {
+  padding: 4px 8px;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 8px;
+  font-size: 0.9em;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  progress {
+    flex: 1;
+    height: 8px;
+    accent-color: steelblue;
+  }
+
+  span {
+    min-width: 3ch;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.load-status {
+  font-size: 0.85em;
+  color: #555;
+}
+
+.ready {
+  color: #1b6e20;
+}
+
+.load-error {
+  color: #b00020;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

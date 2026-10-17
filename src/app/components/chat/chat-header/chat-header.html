@@ -1,39 +1,71 @@
 <div class="header">
-  <p>Welcome to Local AI Chat</p>
+  <p class="title">Welcome to Local AI Chat</p>
   @if (currentMode() === 'ollama') {
-    <p>This is made with Angular and connects to Ollama.</p>
+    <p class="subtitle">This is made with Angular and connects to Ollama.</p>
   } @else {
-    <p>This is made with Angular and runs locally on your browser using Web LLM.</p>
+    <p class="subtitle">This is made with Angular and runs locally on your browser using Web LLM.</p>
   }
 
-  <hr />
-
   @if (currentMode() === 'web-llm') {
-    <div class="model-switch">
-      <span>Model type:</span>
-      <button
-        type="button"
-        [class.active]="webLLMModelType() === 'text'"
-        [disabled]="disableModelSwitch()"
-        (click)="selectModelType('text')"
-      >
-        Text
-      </button>
-      <button
-        type="button"
-        [class.active]="webLLMModelType() === 'vision'"
-        [disabled]="disableModelSwitch()"
-        (click)="selectModelType('vision')"
-        title="Vision-language model: lets you attach an image to your message"
-      >
-        Vision
-      </button>
+    <div class="controls">
+      <div class="model-switch" role="group" aria-label="Model type">
+        <button
+          type="button"
+          [class.active]="webLLMModelType() === 'text'"
+          [attr.aria-pressed]="webLLMModelType() === 'text'"
+          [disabled]="disableModelSwitch()"
+          (click)="selectModelType('text')"
+        >
+          Text
+        </button>
+        <button
+          type="button"
+          [class.active]="webLLMModelType() === 'vision'"
+          [attr.aria-pressed]="webLLMModelType() === 'vision'"
+          [disabled]="disableModelSwitch()"
+          (click)="selectModelType('vision')"
+          title="Vision-language model: lets you attach an image to your message"
+        >
+          Vision
+        </button>
+      </div>
+
+      @if (webLLMModelType() === 'text') {
+        <label class="model-select">
+          <span class="visually-hidden">Text model</span>
+          <select [disabled]="disableModelSwitch()" (change)="selectTextModel($event)">
+            @for (option of textModelOptions; track option.id) {
+              <option [value]="option.id" [selected]="option.id === webLLMTextModel()">
+                {{ option.label }} · ~{{ option.approxSizeMb }} MB
+              </option>
+            }
+          </select>
+        </label>
+      } @else {
+        <span class="model-name">{{ currentModelLabel() }}</span>
+      }
     </div>
-  }
 
-  <p><strong>Current Model:</strong> {{ currentModel() }}</p>
-
-  @if (currentMode() === 'web-llm') {
-    <p><strong>Model Loading:</strong> {{ modelLoading() }}%</p>
+    <div class="status">
+      @if (modelLoadError(); as error) {
+        <p class="load-error" role="alert">
+          Could not load {{ currentModelLabel() }}: {{ error }} Try a smaller model.
+        </p>
+      } @else if (isLoaded()) {
+        <p class="ready">{{ currentModelLabel() }} is ready</p>
+      } @else {
+        <div class="progress-row">
+          <progress
+            max="100"
+            [value]="modelLoading()"
+            [attr.aria-label]="'Loading ' + currentModelLabel()"
+          ></progress>
+          <span>{{ modelLoading() }}%</span>
+        </div>
+        <p class="load-status" aria-live="polite">{{ modelLoadingText() }}</p>
+      }
+    </div>
+  } @else {
+    <p class="status"><strong>Current Model:</strong> {{ currentModel() }}</p>
   }
 </div>

@@ -1,5 +1,6 @@
 import { Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
 import { form, FormField, SchemaPath, validate } from '@angular/forms/signals';
+import { TEST_PROMPT } from '../../../data/test-prompt';
 
 export interface ChatInputSendEvent {
   text: string;
@@ -88,6 +89,11 @@ export class ChatInput {
 
   removeAttachedImage(): void {
     this.attachedImage.set(null);
+  }
+
+  /** Fills the field with the test prompt, without sending it, so it can be edited first. */
+  insertTestPrompt(): void {
+    this.userText.set(TEST_PROMPT);
   }
 
   sendMessage(): void {

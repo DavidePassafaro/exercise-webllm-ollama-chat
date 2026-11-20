@@ -21,6 +21,9 @@
 
   p {
     margin: 0;
+    // Keep the line breaks and empty lines the text was written with.
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .attached-image {

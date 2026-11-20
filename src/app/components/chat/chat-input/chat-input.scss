@@ -6,6 +6,8 @@
 
 .input-row {
   display: flex;
+  // The buttons stay their size at the bottom while the text area grows.
+  align-items: flex-end;
 }
 
 .attachment-preview {
@@ -44,6 +46,11 @@ textarea {
   border-radius: 10px;
   box-sizing: border-box;
   resize: none;
+  // Grows with what is typed or pasted, up to a limit, then scrolls.
+  field-sizing: content;
+  min-height: 2.5rem;
+  max-height: 40vh;
+  overflow-y: auto;
 }
 
 button {
